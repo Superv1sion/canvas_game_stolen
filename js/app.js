@@ -15,10 +15,11 @@ var requestAnimFrame = (function(){
 // Create the canvas
 var canvas = document.createElement("canvas");
 var ctx = canvas.getContext("2d");
+var moveToObject = {};
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 document.body.appendChild(canvas);
-
+document.body.addEventListener("click", setMove, false);
 // The main game loop
 var lastTime;
 function main() {
@@ -27,7 +28,7 @@ function main() {
 
     update(dt);
     render();
-
+    moveThere(moveToObject);
     lastTime = now;
     requestAnimFrame(main);
 };
@@ -69,6 +70,7 @@ var terrainPattern;
 var score = 0;
 var scoreEl = document.getElementById('score');
 
+
 // Speed in pixels per second
 var playerSpeed = 200;
 var bulletSpeed = 100;
@@ -83,6 +85,43 @@ for (var i=0; i<20; i++) {
         sprite: new Sprite('img/sprites.png', [0, 78], [80, 39],
             6, [0, 1, 2, 3, 2, 1])
     })
+}
+function setMove(e) {
+    moveToObject.x=e.clientX;
+    moveToObject.y=e.clientY;
+}
+function moveThere(e) {
+
+    var step = 10;
+    moveTo = {x: e.x, y: e.y};
+    moveFrom = {x: player.pos[0], y: player.pos[1]};
+    if ( Math.abs(moveFrom.x - moveTo.x)>10 || Math.abs(moveFrom.y - moveTo.y)>10){
+        if(Math.abs(moveFrom.x - moveTo.x)>30){
+
+            xStep = determineSign(moveFrom.x, moveTo.x, step);
+            //console.log(step);
+            moveAll(xStep, 0);
+            moveToObject.x +=xStep;
+        }
+
+        if(Math.abs(moveFrom.y - moveTo.y)>30){
+            yStep = determineSign(moveFrom.y, moveTo.y, step);
+            //console.log(yStep);
+            moveAll(0, yStep);
+            moveToObject.y +=yStep;
+        }
+
+    }
+    console.log(moveFrom);
+    console.log(moveTo);
+}
+function determineSign(a, b, val){
+    if(a>b){
+        return val;
+    }else{
+        return -val;
+    }
+
 }
 function update(dt) {
     gameTime += dt;
@@ -110,21 +149,21 @@ function update(dt) {
 function handleInput(dt) {
     if(input.isDown('DOWN') || input.isDown('s')) {
         //player.pos[1] += playerSpeed * dt;
-        moveAll(-10, 0);
+        moveAll(0, -10);
     }
 
     if(input.isDown('UP') || input.isDown('w')) {
         //player.pos[1] -= playerSpeed * dt;
-        moveAll(10, 0);
+        moveAll(0, 10);
     }
 
     if(input.isDown('LEFT') || input.isDown('a')) {
-        moveAll(0, 10);
+        moveAll(10, 0);
         //player.pos[0] -= playerSpeed * dt;
     }
 
     if(input.isDown('RIGHT') || input.isDown('d')) {
-        moveAll(0, -10);
+        moveAll(-10, 0);
         //player.pos[0] += playerSpeed * dt;
     }
 
@@ -148,14 +187,15 @@ function handleInput(dt) {
     }
 }
 function moveAll(x, y){
-
+    console.log('move everything by ' + x + " x");
+    console.log('move everything by ' + y + " y");
     for(var i=0; i<elements.length; i++) {
-        elements[i].pos[1] += x;
-        elements[i].pos[0] += y;
+        elements[i].pos[0] += x;
+        elements[i].pos[1] += y;
     }
     for(var i=0; i<explosions.length; i++) {
-        explosions[i].pos[1] += x;
-        explosions[i].pos[0] += y;
+        explosions[i].pos[0] += x;
+        explosions[i].pos[1] += y;
     }
 
 }
