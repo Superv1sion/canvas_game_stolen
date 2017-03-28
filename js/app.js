@@ -93,27 +93,41 @@ function setMove(e) {
 function moveThere(e) {
 
     var step = 10;
+
     moveTo = {x: e.x, y: e.y};
     moveFrom = {x: player.pos[0], y: player.pos[1]};
+    xDiff = Math.abs(moveFrom.x - moveTo.x);
+    yDiff = Math.abs(moveFrom.y - moveTo.y);
+    var xKoef = 1;
+    var yKeof = 1;
+    if (xDiff > yDiff){
+        yKeof = yDiff/xDiff;
+    }
+    if (yDiff > xDiff){
+
+        xKeof = xDiff/yDiff;
+
+    }
     if ( Math.abs(moveFrom.x - moveTo.x)>10 || Math.abs(moveFrom.y - moveTo.y)>10){
         if(Math.abs(moveFrom.x - moveTo.x)>30){
 
             xStep = determineSign(moveFrom.x, moveTo.x, step);
             //console.log(step);
-            moveAll(xStep, 0);
-            moveToObject.x +=xStep;
+            
+            moveAll(xStep*xKoef, 0);
+            moveToObject.x +=xStep*xKoef;
         }
 
         if(Math.abs(moveFrom.y - moveTo.y)>30){
             yStep = determineSign(moveFrom.y, moveTo.y, step);
             //console.log(yStep);
-            moveAll(0, yStep);
-            moveToObject.y +=yStep;
+            moveAll(0, yStep*yKeof);
+            moveToObject.y +=yStep*yKeof;
         }
 
     }
-    console.log(moveFrom);
-    console.log(moveTo);
+   // console.log(moveFrom);
+   // console.log(moveTo);
 }
 function determineSign(a, b, val){
     if(a>b){
@@ -187,8 +201,8 @@ function handleInput(dt) {
     }
 }
 function moveAll(x, y){
-    console.log('move everything by ' + x + " x");
-    console.log('move everything by ' + y + " y");
+    //console.log('move everything by ' + x + " x");
+    //console.log('move everything by ' + y + " y");
     for(var i=0; i<elements.length; i++) {
         elements[i].pos[0] += x;
         elements[i].pos[1] += y;
