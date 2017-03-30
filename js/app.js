@@ -8,7 +8,7 @@ var requestAnimFrame = (function(){
         window.oRequestAnimationFrame      ||
         window.msRequestAnimationFrame     ||
         function(callback){
-            window.setTimeout(callback, 1000 / 60);
+            window.setTimeout(callback, 1000);
         };
 })();
 
@@ -30,7 +30,9 @@ function main() {
     render();
     moveThere(moveToObject);
     lastTime = now;
+
     requestAnimFrame(main);
+
 };
 
 function init() {
@@ -72,20 +74,12 @@ var scoreEl = document.getElementById('score');
 
 
 // Speed in pixels per second
-var playerSpeed = 200;
-var bulletSpeed = 100;
-var enemySpeed = 100;
+var playerSpeed = 10;
+var bulletSpeed = 10;
+var enemySpeed = 10;
 
 // Update game objects
-for (var i=0; i<20; i++) {
 
-    elements.push({
-        pos: [canvas.width * Math.random(),
-            canvas.height * Math.random()],
-        sprite: new Sprite('img/sprites.png', [0, 78], [80, 39],
-            6, [0, 1, 2, 3, 2, 1])
-    })
-}
 function setMove(e) {
     moveToObject.x=e.clientX;
     moveToObject.y=e.clientY;
@@ -113,7 +107,7 @@ function moveThere(e) {
 
             xStep = determineSign(moveFrom.x, moveTo.x, step);
             //console.log(step);
-            
+
             moveAll(xStep*xKoef, 0);
             moveToObject.x +=xStep*xKoef;
         }
@@ -216,6 +210,17 @@ function moveAll(x, y){
 function updateEntities(dt) {
     // Update the player sprite animation
     player.sprite.update(dt);
+    while(allItems.length>0){
+        var item = allItems.shift();
+
+            elements.push({
+                pos: [item.x,
+                    item.y],
+                sprite: new Sprite('img/sprites.png', [0, 78], [80, 39],
+                    6, [0, 1, 2, 3, 2, 1])
+            })
+
+    }
 
     // Update all the bullets
     for(var i=0; i<bullets.length; i++) {
