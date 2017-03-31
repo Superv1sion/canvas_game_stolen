@@ -17,7 +17,9 @@ var canvas = document.createElement("canvas");
 var ctx = canvas.getContext("2d");
 var moveToObject = {};
 var loginData ={'Login': 'first', 'Password' : 'test'};
-
+var items = [];
+var itemsControl = {};
+var coordinator = {isSent : 0};
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 document.body.appendChild(canvas);
@@ -37,6 +39,29 @@ function main() {
 
 };
 
+function getItems(){
+
+
+            socket.emit('requestItems', {'SessionToken': loginData.SessionToken});
+
+
+}
+
+function sendCoordinates() {
+
+    if(coordinator.isSent == 1 ){
+        return;
+    }
+    console.log('send coordinates');
+    //console.log({offsetX: moveToObject.x - player.pos[0], offsetY: moveToObject.y - player.pos[1],  SessionToken: loginData.SessionToken});
+    socket.emit('sendOffset', {offsetX: moveToObject.endPointX - player.pos[0], offsetY: moveToObject.endPointY - player.pos[1],  SessionToken: loginData.SessionToken});
+    //socket.emit('sendOffset', {newX: moveToObject.x, newY: moveToObject.y, oldX: player.pos[0], oldY: player.pos[1], SessionToken: loginData.SessionToken});
+
+    coordinator.isSent= 1;
+ //   console.log(coordinator);
+}
+
+
 function init() {
     terrainPattern = ctx.createPattern(resources.get('img/terrain.png'), 'repeat');
 
@@ -50,22 +75,35 @@ function init() {
             resolve();
         })
     });
-    promise.then(function () {
-        console.log(loginData);
-        socket.emit('requestItems', {'SessionToken' : loginData.SessionToken});
+    socket.on('getItems', function (data) {
 
-        socket.on('getItems', function (data) {
-            console.log(data);
-        })
-        //console.log(data);
-    })
-    document.getElementById('play-again').addEventListener('click', function() {
-        reset();
+        for (var i = 0; i < data.length; i++) {
+            if( typeof itemsControl[data[i].ItemID] != 'undefined' ){
+                continue;
+            }
+            data[i].x += player.pos[0];
+            data[i].y += player.pos[1];
+            itemsControl[data[i].ItemID] = '1';
+            items.push(data[i]);
+        }
+
     });
+    socket.on('offsetProcessed', function (data) {
+        getItems();
+    })
+    //document.getElementById('play-again').addEventListener('click', function() {
+    //    reset();
+    //});
 
-    reset();
-    lastTime = Date.now();
-    main();
+    promise.then(function () {
+        getItems();
+        reset();
+        lastTime = Date.now();
+        main();
+    })
+
+
+
 }
 
 resources.load([
@@ -104,10 +142,15 @@ var enemySpeed = 10;
 function setMove(e) {
     moveToObject.x=e.clientX;
     moveToObject.y=e.clientY;
+    moveToObject.endPointX =moveToObject.x;
+    moveToObject.endPointY =moveToObject.y;
+    coordinator.isSent= 0;
+
 }
 function moveThere(e) {
 
-    var step = 10;
+    var step = playerSpeed;
+
 
     moveTo = {x: e.x, y: e.y};
     moveFrom = {x: player.pos[0], y: player.pos[1]};
@@ -123,23 +166,45 @@ function moveThere(e) {
         xKeof = xDiff/yDiff;
 
     }
+    //console.log(Math.abs(moveFrom.x - moveTo.x));
     if ( Math.abs(moveFrom.x - moveTo.x)>10 || Math.abs(moveFrom.y - moveTo.y)>10){
-        if(Math.abs(moveFrom.x - moveTo.x)>30){
+
 
             xStep = determineSign(moveFrom.x, moveTo.x, step);
             //console.log(step);
 
             moveAll(xStep*xKoef, 0);
             moveToObject.x +=xStep*xKoef;
-        }
 
-        if(Math.abs(moveFrom.y - moveTo.y)>30){
+
+
             yStep = determineSign(moveFrom.y, moveTo.y, step);
             //console.log(yStep);
             moveAll(0, yStep*yKeof);
             moveToObject.y +=yStep*yKeof;
-        }
 
+
+    }else if ( Math.abs(moveFrom.x - moveTo.x)>1 || Math.abs(moveFrom.y - moveTo.y)>1 ){
+
+        step = 1;
+        //if(Math.abs(moveFrom.x - moveTo.x)>30){
+
+            xStep = determineSign(moveFrom.x, moveTo.x, step);
+            //console.log(step);
+
+            moveAll(xStep*xKoef, 0);
+            moveToObject.x +=xStep*xKoef;
+        //}
+
+        //if(Math.abs(moveFrom.y - moveTo.y)>30){
+            yStep = determineSign(moveFrom.y, moveTo.y, step);
+            //console.log(yStep);
+            moveAll(0, yStep*yKeof);
+            moveToObject.y +=yStep*yKeof;
+        //}
+    }
+    if ( Math.abs(moveFrom.x - moveTo.x) <=1 || Math.abs(moveFrom.y - moveTo.y) <=1 ){
+        sendCoordinates();
     }
    // console.log(moveFrom);
    // console.log(moveTo);
@@ -202,15 +267,6 @@ function handleInput(dt) {
         var x = player.pos[0] + player.sprite.size[0] / 2;
         var y = player.pos[1] + player.sprite.size[1] / 2;
 
-        //bullets.push({ pos: [x, y],
-        //               dir: 'forward',
-        //               sprite: new Sprite('img/sprites.png', [0, 39], [18, 8]) });
-        //bullets.push({ pos: [x, y],
-        //               dir: 'up',
-        //               sprite: new Sprite('img/sprites.png', [0, 50], [9, 5]) });
-        //bullets.push({ pos: [x, y],
-        //               dir: 'down',
-        //               sprite: new Sprite('img/sprites.png', [0, 60], [9, 5]) });
 
         lastFire = Date.now();
     }
@@ -231,8 +287,9 @@ function moveAll(x, y){
 function updateEntities(dt) {
     // Update the player sprite animation
     player.sprite.update(dt);
-    while(allItems.length>0){
-        var item = allItems.shift();
+
+    while(items.length > 0){
+        var item = items.shift();
 
             elements.push({
                 pos: [item.x,
@@ -265,16 +322,16 @@ function updateEntities(dt) {
     }
 
    // Update all the enemies
-  for(var i=0; i<elements.length; i++) {
+
       //enemies[i].pos[0] -= enemySpeed * dt;
 
-      elements[i].sprite.update(dt);
-      // Remove if offscreen
-      if(elements[i].pos[0] + elements[i].sprite.size[0] < 0) {
-      //    enemies.splice(i, 1);
-      //    i--;
-      }
-  }
+     // elements[i].sprite.update(dt);
+     // // Remove if offscreen
+     // if(elements[i].pos[0] + elements[i].sprite.size[0] < 0) {
+     // //    enemies.splice(i, 1);
+     // //    i--;
+     // }
+
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     // Update all the explosions
