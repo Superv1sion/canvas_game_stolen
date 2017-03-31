@@ -16,6 +16,8 @@ var requestAnimFrame = (function(){
 var canvas = document.createElement("canvas");
 var ctx = canvas.getContext("2d");
 var moveToObject = {};
+var loginData ={'Login': 'first', 'Password' : 'test'};
+
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 document.body.appendChild(canvas);
@@ -38,6 +40,25 @@ function main() {
 function init() {
     terrainPattern = ctx.createPattern(resources.get('img/terrain.png'), 'repeat');
 
+    var promise = new Promise((resolve, reject) => {
+
+        socket.emit('login', loginData);
+        socket.on('loginSuccess', function (data) {
+
+            loginData.SessionToken = data.SessionToken;
+
+            resolve();
+        })
+    });
+    promise.then(function () {
+        console.log(loginData);
+        socket.emit('requestItems', {'SessionToken' : loginData.SessionToken});
+
+        socket.on('getItems', function (data) {
+            console.log(data);
+        })
+        //console.log(data);
+    })
     document.getElementById('play-again').addEventListener('click', function() {
         reset();
     });
@@ -157,21 +178,21 @@ function update(dt) {
 function handleInput(dt) {
     if(input.isDown('DOWN') || input.isDown('s')) {
         //player.pos[1] += playerSpeed * dt;
-        moveAll(0, -10);
+        moveAll(0, -playerSpeed);
     }
 
     if(input.isDown('UP') || input.isDown('w')) {
         //player.pos[1] -= playerSpeed * dt;
-        moveAll(0, 10);
+        moveAll(0, playerSpeed);
     }
 
     if(input.isDown('LEFT') || input.isDown('a')) {
-        moveAll(10, 0);
+        moveAll(playerSpeed, 0);
         //player.pos[0] -= playerSpeed * dt;
     }
 
     if(input.isDown('RIGHT') || input.isDown('d')) {
-        moveAll(-10, 0);
+        moveAll(-playerSpeed, 0);
         //player.pos[0] += playerSpeed * dt;
     }
 

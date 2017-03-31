@@ -34,21 +34,7 @@
     </div>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
     <script src="http://localhost:3000/socket.io/socket.io.js"></script>
-    <script>
-      var allItems = [];
-        $(document).ready(function(){
-            // Connect to our node/websockets server
-            var socket = io.connect('http://localhost:3000/some_token');
-
-            // Initial set of notes, loop through and add to list
-            socket.on('all items', function(data){
-                console.log('got items');
-                allItems = data;
-            })
-
-
-        })
-    </script>
+    <script type="text/javascript" src="js/socket.js"></script>
     <script type="text/javascript" src="js/resources.js"></script>
     <script type="text/javascript" src="js/input.js"></script>
     <script type="text/javascript" src="js/sprite.js"></script>
