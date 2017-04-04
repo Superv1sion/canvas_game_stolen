@@ -40,7 +40,7 @@ var coordinator = {
 
             var playerData = localDb[Token];
             console.log(playerData);
-            var step = 200;
+            var step = 1000;
             var items = [];
             db.query('select * from ItemsCoordinates where x between ? and ? and y between ? and ?', [playerData.x-step, playerData.x+step, playerData.y-step, playerData.y+step ])
                 .on('result', (data) => {

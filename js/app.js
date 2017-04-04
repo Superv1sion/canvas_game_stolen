@@ -47,14 +47,15 @@ function getItems(){
 
 }
 
-function sendCoordinates() {
+function sendOffset() {
 
     if(coordinator.isSent == 1 ){
         return;
     }
+    console.log(moveToObject);
     console.log('send coordinates');
     //console.log({offsetX: moveToObject.x - player.pos[0], offsetY: moveToObject.y - player.pos[1],  SessionToken: loginData.SessionToken});
-    socket.emit('sendOffset', {offsetX: moveToObject.endPointX - player.pos[0], offsetY: moveToObject.endPointY - player.pos[1],  SessionToken: loginData.SessionToken});
+    socket.emit('sendOffset', {offsetX: moveToObject.endPointX - moveToObject.startPointX, offsetY: moveToObject.endPointY - moveToObject.startPointY,  SessionToken: loginData.SessionToken});
     //socket.emit('sendOffset', {newX: moveToObject.x, newY: moveToObject.y, oldX: player.pos[0], oldY: player.pos[1], SessionToken: loginData.SessionToken});
 
     coordinator.isSent= 1;
@@ -140,8 +141,27 @@ var enemySpeed = 10;
 // Update game objects
 
 function setMove(e) {
+
+    xDiff = Math.abs(player.pos[0] - moveToObject.x);
+    yDiff = Math.abs(player.pos[1] - moveToObject.y);
+
+    if(xDiff > 1 || yDiff > 1){
+
+        moveToObject.endPointX = moveToObject.startPointX + (moveToObject.offsetX - (moveToObject.x - player.pos[0]));
+        moveToObject.endPointY = moveToObject.startPointY + (moveToObject.offsetY - (moveToObject.y - player.pos[1]));
+
+        sendOffset();
+    }
+
+    moveToObject.startPointX = player.pos[0];
+    moveToObject.startPointY = player.pos[1];
     moveToObject.x=e.clientX;
     moveToObject.y=e.clientY;
+
+
+    moveToObject.offsetX =moveToObject.x-moveToObject.startPointX;
+    moveToObject.offsetY =moveToObject.y-moveToObject.startPointY;
+
     moveToObject.endPointX =moveToObject.x;
     moveToObject.endPointY =moveToObject.y;
     coordinator.isSent= 0;
@@ -194,6 +214,7 @@ function moveThere(e) {
 
             moveAll(xStep*xKoef, 0);
             moveToObject.x +=xStep*xKoef;
+
         //}
 
         //if(Math.abs(moveFrom.y - moveTo.y)>30){
@@ -204,7 +225,7 @@ function moveThere(e) {
         //}
     }
     if ( Math.abs(moveFrom.x - moveTo.x) <=1 || Math.abs(moveFrom.y - moveTo.y) <=1 ){
-        sendCoordinates();
+        sendOffset();
     }
    // console.log(moveFrom);
    // console.log(moveTo);
